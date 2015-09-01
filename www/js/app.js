@@ -66,7 +66,7 @@ var onSuccess = function(position){
                 detail += "<p>距離: "+ distance + "(m)</p>";
                 detail += "<p>席数: " + storeCapacity + "</p>" ;
                 detail += '<button onclick="showCoupon(\'' + store.id + '\');">クーポンを見る</button>';
-                markToMap(detail, myLatlng, map, 'images/marker_mbaas.png');     
+                markToMap(detail, myLatlng, map, 'images/marker.png');     
             }
         },
         error: function(error) {
@@ -121,7 +121,8 @@ function getCouponList(storeId) {
                            + "'userid':"   +  currentLoginUser.id + "\n" 
                            + "'storeid':"  +  storeId + "}";
                 var showDetail = "<h2>" + results[i].get("Title") + "</h2>" 
-                           + "<div id='"+ results[i].id +"'></div>";
+                           + "<div id='"+ results[i].id +"'></div>"
+                           + "<button onclick=\'doRegister(\"" + results[i].id + '\", \"' + storeId + '\");\'>利用する</button>'; 
                 $li = $("<li>"+ showDetail +"</li>");
                 $("#CouponListView").prepend($li);
                 $('#' + results[i].id).qrcode(detail);                  
@@ -137,4 +138,35 @@ function getCouponList(storeId) {
 function showCoupon(storeId) {
     getCouponList(storeId);
     $.mobile.changePage('#CouponPage');
+}
+
+function doRegister(couponId, storeId) {
+    var StoreClass = NCMB.Object.extend("Store");
+    var store = new StoreClass();
+    store.set("objectId",storeId);
+    
+    var user = new NCMB.User();
+    user.id = currentLoginUser.id;
+    
+    var CouponClass = NCMB.Object.extend("Coupon");
+    var coupon = new CouponClass();
+    coupon.set("objectId",couponId);
+    
+    var UsedClass = NCMB.Object.extend("Used");
+    var used = new UsedClass();
+    used.set("coupon", coupon);
+    used.set("store", store);
+    used.set("user", user);
+    
+    used.save(null, {
+      success: function(obj) {
+        // 保存完了後に実行される
+        alert("利用登録完了！");
+        showMap();
+      },
+      error: function(obj, error) {
+        // エラー時に実行される
+        alert("登録失敗！次のエラーが発生：" + error.message);
+      }
+    });
 }
