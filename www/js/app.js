@@ -34,9 +34,9 @@ var onSuccess = function(position){
     var location = { lat: position.coords.latitude, lng: position.coords.longitude};
     //mobile backendに登録しているストアを取得し、地図で表示
     //位置情報を検索するクラスのNCMB.Objectを作成する
-    var StoreClass = NCMB.Object.extend("Store");
+    var ShopClass = NCMB.Object.extend("Shop");
     //NCMB.Queryを作成
-    var query = new NCMB.Query(StoreClass);
+    var query = new NCMB.Query(ShopClass);
     //位置情報をもとに検索する条件を設定
     var geoPoint = new NCMB.GeoPoint(location.lat, location.lng);
     query.withinKilometers("geolocation", geoPoint, 5);
@@ -49,23 +49,23 @@ var onSuccess = function(position){
     markToMap("現在地", location, map, null);
     //mobile backend上のデータ検索を実行する
     query.find({
-        success: function(stores) {      
+        success: function(shops) {      
             // 検索が成功した場合の処理
-            for (var i = 0; i < stores.length; i++){
-                var store = stores[i];
-                var storeLocation = store.get("geolocation");              
-                var myLatlng = new google.maps.LatLng(storeLocation.latitude, storeLocation.longitude);
+            for (var i = 0; i < shops.length; i++){
+                var shop = shops[i];
+                var shopLocation = shop.get("geolocation");              
+                var myLatlng = new google.maps.LatLng(shopLocation.latitude, shopLocation.longitude);
                 var detail = "";
-                var storeName = store.get("name");
-                detail += "<h2>"+ storeName +"</h2>";
-                var storeCapacity = store.get("capacity");
-                var storeLocation = store.get("geolocation");
-                var storeLatLng = new google.maps.LatLng(storeLocation.latitude,storeLocation.longitude);
+                var shopName = shop.get("name");
+                detail += "<h2>"+ shopName +"</h2>";
+                var shopCapacity = shop.get("capacity");
+                var shopLocation = shop.get("geolocation");
+                var shopLatLng = new google.maps.LatLng(shopLocation.latitude,shopLocation.longitude);
                 var locationLatLng = new google.maps.LatLng(location.lat,location.lng);
-                var distance = Math.round(google.maps.geometry.spherical.computeDistanceBetween (locationLatLng, storeLatLng));  
+                var distance = Math.round(google.maps.geometry.spherical.computeDistanceBetween (locationLatLng, shopLatLng));  
                 detail += "<p>距離: "+ distance + "(m)</p>";
-                detail += "<p>席数: " + storeCapacity + "</p>" ;
-                detail += '<button onclick="showCoupon(\'' + store.id + '\');">クーポンを見る</button>';
+                detail += "<p>席数: " + shopCapacity + "</p>" ;
+                detail += '<button onclick="showCoupon(\'' + shop.id + '\');">クーポンを見る</button>';
                 markToMap(detail, myLatlng, map, 'images/marker.png');     
             }
         },
@@ -105,45 +105,45 @@ function showMap(){
 
 //----------------------------------COUPON SHOW-------------------------------------//
 
-function getCouponList(storeId) {
+function getCouponList(shopId) {
     //Coupon情報を表示      
      $("#CouponListView").empty();
     var CouponClass = NCMB.Object.extend("Coupon");
     var query = new NCMB.Query(CouponClass);
-    var StoreClass = NCMB.Object.extend("Store");
-    var store = new StoreClass();
-    store.set("objectId",storeId);
-    query.equalTo("Store", store);
+    var ShopClass = NCMB.Object.extend("Shop");
+    var shop = new ShopClass();
+    shop.set("objectId",shopId);
+    query.equalTo("Shop", shop);
     query.find({
         success: function(results) {
             for (var i = 0; i < results.length; i++) {
                 var detail = "{'couponid':" +  results[i].id + "\n" 
                            + "'userid':"   +  currentLoginUser.id + "\n" 
-                           + "'storeid':"  +  storeId + "}";
+                           + "'shopid':"  +  shopId + "}";
                 var showDetail = "<h2>" + results[i].get("Title") + "</h2>" 
                            + "<div id='"+ results[i].id +"'></div>"
-                           + "<button onclick=\'doRegister(\"" + results[i].id + '\", \"' + storeId + '\");\'>利用する</button>'; 
+                           + "<button onclick=\'doRegister(\"" + results[i].id + '\", \"' + shopId + '\");\'>利用する</button>'; 
                 $li = $("<li>"+ showDetail +"</li>");
                 $("#CouponListView").prepend($li);
                 $('#' + results[i].id).qrcode(detail);                  
             }                      
         }, 
-        error: function(store, error) {
+        error: function(shop, error) {
             alert(error);
         }
     });  
 }
 
 
-function showCoupon(storeId) {
-    getCouponList(storeId);
+function showCoupon(shopId) {
+    getCouponList(shopId);
     $.mobile.changePage('#CouponPage');
 }
 
-function doRegister(couponId, storeId) {
-    var StoreClass = NCMB.Object.extend("Store");
-    var store = new StoreClass();
-    store.set("objectId",storeId);
+function doRegister(couponId, shopId) {
+    var ShopClass = NCMB.Object.extend("Shop");
+    var shop = new ShopClass();
+    shop.set("objectId",shopId);
     
     var user = new NCMB.User();
     user.id = currentLoginUser.id;
@@ -155,7 +155,7 @@ function doRegister(couponId, storeId) {
     var UsedClass = NCMB.Object.extend("Used");
     var used = new UsedClass();
     used.set("coupon", coupon);
-    used.set("store", store);
+    used.set("shop", shop);
     used.set("user", user);
     
     used.save(null, {
